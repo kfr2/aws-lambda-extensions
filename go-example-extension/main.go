@@ -7,10 +7,13 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
+	"time"
 
 	"aws-lambda-extensions/go-example-extension/extension"
 )
@@ -39,8 +42,45 @@ func main() {
 	}
 	println(printPrefix, "Register response:", prettyPrint(res))
 
+	// Retrieve the values for environment variables which begin with "SECRET_"
+	// and store them in /tmp/variables. Afterwards, configure a timer to refresh
+	// this file every minute.
+	storeSecretEnvironmentVariables("devops/keys/lambda-extensions-test", "us-east-1")
+	go func() {
+		for now := range time.Tick(time.Minute) {
+			fmt.Println(now, storeSecretEnvironmentVariables("devops/keys/lambda-extensions-test", "us-east-1"))
+		}
+	}()
+
 	// Will block until shutdown event is received or cancelled via the context.
 	processEvents(ctx)
+}
+
+func storeSecretEnvironmentVariables(secretName string, region string) string {
+	fmt.Println(printPrefix, "Storing secret environment variables...")
+
+	loadSecretsFromSecretsManager(secretName, region)
+
+	f, err := os.Create("/tmp/variables")
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer f.Close()
+
+	for _, e := range os.Environ() {
+		if strings.HasPrefix(e, "SECRET_") {
+			println(printPrefix, "Found env variable to convert: ", e)
+			envVar, _, _ := strings.Cut(e, "=")
+			envVar = strings.ReplaceAll(envVar, "SECRET_", "")
+			value := getSecretEnvironmentVariableValue(envVar)
+			_, err := f.WriteString(fmt.Sprintf("%s=%s\n", envVar, value))
+			if err != nil {
+				println(printPrefix, "Error writing env variable to file: ", err)
+			}
+		}
+	}
+
+	return "Secrets have been written to /tmp/variables"
 }
 
 func processEvents(ctx context.Context) {

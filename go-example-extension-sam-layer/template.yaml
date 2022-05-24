@@ -2,7 +2,7 @@ AWSTemplateFormatVersion: 2010-09-09
 Transform: AWS::Serverless-2016-10-31
 Description: >
   go-example-extension-sam-layer
-  
+
   Sample SAM Template for go-example-extension-sam-layer
 
 # More info about Globals: https://github.com/awslabs/serverless-application-model/blob/master/docs/globals.rst
@@ -20,11 +20,11 @@ Resources:
       Description: Go Example Lambda Extension Layer
       ContentUri: go-example-extension/
       CompatibleRuntimes:
-      - nodejs12.x
-      - python3.8
-      - java11
-      - dotnetcore3.1
-      - provided.al2
+        - nodejs12.x
+        - python3.8
+        - java11
+        - dotnetcore3.1
+        - provided.al2
       LicenseInfo: MIT-0
       RetentionPolicy: Retain
 
@@ -33,13 +33,17 @@ Resources:
     Properties:
       CodeUri: hello-world/
       Handler: hello.handler
+      Policies:
+        - AWSSecretsManagerGetSecretValuePolicy:
+            SecretArn: arn:aws:secretsmanager:us-east-1:427761689133:secret:devops/keys/lambda-extensions-test-XfbCDw
       Layers:
-      - !Ref GoExampleExtensionLayer
+        - !Ref GoExampleExtensionLayer
       Runtime: provided.al2
       Tracing: Active # https://docs.aws.amazon.com/lambda/latest/dg/lambda-x-ray.html
       Environment: # More info about Env Vars: https://github.com/awslabs/serverless-application-model/blob/master/versions/2016-10-31.md#environment-object
         Variables:
-          PARAM1: VALUE
+          SECRET_PARAMETER_ONE: REPLACED1
+          SECRET_PARAMETER_TWO: REPLACED2
 
 Outputs:
   GoExampleExtensionLayer:

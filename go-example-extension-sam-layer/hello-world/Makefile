@@ -1,5 +1,5 @@
 build-HelloWorldFunction:
-	cp bootstrap hello.sh $(ARTIFACTS_DIR)
+	cp bootstrap hello.sh jq $(ARTIFACTS_DIR)
 
 run-HelloWorldFunction:
 	echo "run HelloWorldFunction"
